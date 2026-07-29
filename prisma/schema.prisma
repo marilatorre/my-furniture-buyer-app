@@ -1,0 +1,40 @@
+// This file describes our database tables in plain terms.
+// See architecture.md for the diagram and explanation.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  password String
+  budget   Float
+  orders   Order[]
+}
+
+model Product {
+  id          Int     @id @default(autoincrement())
+  name        String
+  price       Float
+  imageUrl    String
+  description String
+  orders      Order[]
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+
+  product   Product  @relation(fields: [productId], references: [id])
+  productId Int
+}

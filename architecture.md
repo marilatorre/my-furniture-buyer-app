@@ -54,35 +54,55 @@ and backend to keep in sync. A single request to the app can:
 
 ## Data model
 
-**User**
-| field       | type   | notes                              |
-|-------------|--------|-------------------------------------|
-| id          | int    | primary key                        |
-| email       | string | unique, used to log in             |
-| password    | string | hashed, never stored in plain text |
-| budget      | number | total budget in dollars            |
+```mermaid
+classDiagram
+    class User {
+        int id
+        string email
+        string password
+        float budget
+    }
+    class Product {
+        int id
+        string name
+        float price
+        string imageUrl
+        string description
+    }
+    class Order {
+        int id
+        int quantity
+        datetime createdAt
+    }
+    User "1" --> "*" Order : places
+    Product "1" --> "*" Order : appears in
+```
 
-**Product**
-| field       | type   | notes                     |
-|-------------|--------|---------------------------|
-| id          | int    | primary key               |
-| name        | string |                           |
-| price       | number | in dollars                |
-| imageUrl    | string | path/URL to product image |
-| description | string |                           |
+**In plain English:**
 
-**Order**
-| field      | type     | notes                                  |
-|------------|----------|------------------------------------------|
-| id         | int      | primary key                             |
-| userId     | int      | which buyer placed it (foreign key)     |
-| productId  | int      | which product was ordered (foreign key) |
-| quantity   | int      |                                          |
-| createdAt  | datetime | when the order was placed               |
+There are three things the app needs to remember:
 
-"Amount spent" is calculated on the fly (sum of `product.price *
-order.quantity` for a user's orders) rather than stored — keeps the data
-model simple and avoids it getting out of sync.
+- **User** — a buyer. Holds their login details (email + a hashed
+  password, never plain text) and their **budget**: the total dollar
+  amount they're allowed to spend.
+- **Product** — an item in the furniture catalogue: its name, price,
+  an image to show, and a description. Products don't know or care who
+  buys them.
+- **Order** — the record that connects a User to a Product: "this buyer
+  ordered this product, this many of it, at this time." An Order always
+  belongs to exactly one User and points at exactly one Product.
+
+The two arrows describe "one-to-many" relationships:
+- **One User can place many Orders** — a buyer can order lots of things
+  over time, but each Order was placed by one specific buyer.
+- **One Product can appear in many Orders** — the same chair might be
+  bought by ten different buyers, but each Order line is for one
+  specific product.
+
+Note that "amount spent" and "amount remaining" aren't stored anywhere
+— they're calculated on the fly by adding up `price × quantity` across
+a buyer's Orders. This keeps the data model small and means there's
+never a stale number that's out of sync with the actual orders.
 
 ## Key flows
 
